@@ -390,41 +390,43 @@ export default function LearningPage() {
                   <span>Text</span>
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="text" className="mt-6 space-y-4">
+              <TabsContent value="text" className="mt-6 space-y-4 h-[600px] overflow-y-auto relative">
                 {currentModule && (
                   <>
                     <ModuleRenderer 
                       modules={[currentModule]} 
                       key={currentModule.number}
                     />
-                    <div className="flex justify-end mt-4">
-                      <Button 
-                        onClick={handleNextModule}
-                        className="flex items-center gap-2"
-                        disabled={!course}
-                      >
-                        {currentModule.completed ? (
-                          <>
-                            <CheckCircle className="h-4 w-4" />
-                            Completed
-                          </>
-                        ) : currentModuleIndex === course.modules.length - 1 ? (
-                          <>
-                            Finish Course
-                            <CheckCircle className="h-4 w-4" />
-                          </>
-                        ) : (
-                          <>
-                            Next Module
-                            <ArrowLeft className="h-4 w-4 rotate-180" />
-                          </>
-                        )}
-                      </Button>
+                    <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 py-4 border-t">
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={handleNextModule}
+                          className="flex items-center gap-2"
+                          disabled={!course}
+                        >
+                          {currentModule.completed ? (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Completed
+                            </>
+                          ) : currentModuleIndex === course.modules.length - 1 ? (
+                            <>
+                              Finish Course
+                              <CheckCircle className="h-4 w-4" />
+                            </>
+                          ) : (
+                            <>
+                              Next Module
+                              <ArrowLeft className="h-4 w-4 rotate-180" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
               </TabsContent>
-              <TabsContent value="kinesthetics" className="mt-6">
+              <TabsContent value="kinesthetics" className="mt-6 h-[600px] overflow-y-auto relative">
                 {interactiveElements.length > 0 ? (
                   <div className="space-y-6">
                     {interactiveElements.map((item, index) => (
@@ -446,12 +448,64 @@ export default function LearningPage() {
                     </p>
                   </div>
                 )}
+                <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 py-4 border-t">
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleNextModule}
+                      className="flex items-center gap-2"
+                      disabled={!course}
+                    >
+                      {currentModule?.completed ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          Completed
+                        </>
+                      ) : currentModuleIndex === course.modules.length - 1 ? (
+                        <>
+                          Finish Course
+                          <CheckCircle className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Next Module
+                          <ArrowLeft className="h-4 w-4 rotate-180" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
-              <TabsContent value="auditory" className="mt-6">
+              <TabsContent value="auditory" className="mt-6 h-[600px] overflow-y-auto relative">
                 <AudioPlayer
                   content={currentModule?.content || ''}
                   moduleTitle={currentModule?.title || 'Module Content'}
                 />
+                <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 py-4 border-t">
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleNextModule}
+                      className="flex items-center gap-2"
+                      disabled={!course}
+                    >
+                      {currentModule?.completed ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          Completed
+                        </>
+                      ) : currentModuleIndex === course.modules.length - 1 ? (
+                        <>
+                          Finish Course
+                          <CheckCircle className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Next Module
+                          <ArrowLeft className="h-4 w-4 rotate-180" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

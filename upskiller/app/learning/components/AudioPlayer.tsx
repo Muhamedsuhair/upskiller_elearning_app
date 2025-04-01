@@ -4,11 +4,11 @@ import { Slider } from "@/components/ui/slider";
 import { 
   Play, 
   Pause, 
-  Volume2,
   Settings,
   RefreshCcw
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
+import { useSpeechSynthesis } from 'react-speech-kit';
 
 interface AudioPlayerProps {
   content: string;
@@ -18,15 +18,12 @@ interface AudioPlayerProps {
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [rate, setRate] = useState(1);
-  const [pitch, setPitch] = useState(1);
-  const [volume, setVolume] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [currentProgress, setCurrentProgress] = useState(0);
-  const speechSynthesis = window.speechSynthesis;
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const contentRef = useRef<string>(content);
+  const [isLoading, setIsLoading] = useState(false);
   const positionRef = useRef(0);
   const chunksRef = useRef<string[]>([]);
+  const { speak, speaking, supported, voices, cancel } = useSpeechSynthesis();
 
   const processContent = (text: string): string => {
     // Split the content by lines
@@ -34,6 +31,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
     let processedContent = '';
     let isInsideMermaid = false;
     let isInsideInteractive = false;
+    let isInsideCodeBlock = false;
     let currentParagraph = '';
 
     lines.forEach(line => {
@@ -58,6 +56,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
         return;
       }
       if (isInsideInteractive) return;
+
+      // Handle code blocks
+      if (line.includes('```')) {
+        isInsideCodeBlock = !isInsideCodeBlock;
+        if (currentParagraph) {
+          processedContent += currentParagraph + '\n\n';
+          currentParagraph = '';
+        }
+        processedContent += line + '\n';
+        return;
+      }
+      if (isInsideCodeBlock) {
+        processedContent += line + '\n';
+        return;
+      }
 
       // Clean up the line
       let cleanedLine = line
@@ -88,16 +101,28 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
       else if (
         cleanedLine &&
         !cleanedLine.startsWith('#') &&
-        !cleanedLine.startsWith('```') &&
         !cleanedLine.includes('Real-World Scenario') &&
         !cleanedLine.includes('Progress Checkpoint') &&
         !cleanedLine.includes('Mistake Prevention') &&
         !cleanedLine.startsWith('(Voice note')
       ) {
+        // Check if this is a new section or bullet point
+        if (cleanedLine.match(/^\d+\./) || // Numbered sections
+            cleanedLine.match(/^\* /) ||   // Bullet points
+            cleanedLine.match(/^• /) ||    // Bullet points
+            cleanedLine.match(/^- /) ||    // Bullet points
+            cleanedLine.match(/^(Deep Dive|Practical Application|Formal Definition|Key Points|Summary|Note|Important|Warning|Tip|Example|Exercise|Practice|Challenge|Solution|Answer|Explanation):/i)) {
+          if (currentParagraph) {
+            processedContent += currentParagraph + '\n\n';
+            currentParagraph = '';
+          }
+          processedContent += cleanedLine + '\n';
+        } else {
         if (currentParagraph) {
           currentParagraph += ' ' + cleanedLine;
         } else {
           currentParagraph = cleanedLine;
+          }
         }
       }
     });
@@ -107,215 +132,81 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
       processedContent += currentParagraph;
     }
 
-    // Clean up any extra spaces and normalize whitespace
-    return processedContent
-      .replace(/\s+/g, ' ')
-      .replace(/\s+\./g, '.')
-      .replace(/\s+,/g, ',')
-      .trim();
+    return processedContent.trim();
   };
 
+  // Process content into chunks
   useEffect(() => {
-    // Process the content before splitting into chunks
     const processedContent = processContent(content);
     chunksRef.current = splitIntoChunks(processedContent);
-    contentRef.current = processedContent;
     positionRef.current = 0;
-
-    // Initialize speech synthesis
-    setupSpeechSynthesis();
-
-    // Cleanup
-    return () => {
-      if (speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-      }
-    };
   }, [content]);
 
-  const splitIntoChunks = (text: string): string[] => {
-    // Split by sentences and then into chunks of reasonable size
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    const chunks: string[] = [];
-    let currentChunk = '';
-
-    sentences.forEach(sentence => {
-      if (currentChunk.length + sentence.length < 200) {
-        currentChunk += sentence;
+  // Handle speech completion
+  useEffect(() => {
+    if (!speaking && isPlaying) {
+      positionRef.current++;
+      if (positionRef.current < chunksRef.current.length) {
+        playNextChunk();
       } else {
-        if (currentChunk) chunks.push(currentChunk);
-        currentChunk = sentence;
-      }
-    });
-
-    if (currentChunk) chunks.push(currentChunk);
-    return chunks;
-  };
-
-  const setupSpeechSynthesis = () => {
-    // Create new utterance for current chunk
-    const createUtterance = (text: string) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-      utterance.volume = volume;
-
-      try {
-        // Get available voices
-        const voices = speechSynthesis.getVoices();
-        console.log('Available voices:', voices.length);
-        
-        // Try to find a suitable voice in this order: female English > any English > any female > first available
-        const femaleEnglishVoice = voices.find(voice => 
-          (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman')) &&
-          voice.lang.toLowerCase().startsWith('en')
-        );
-        
-        const anyEnglishVoice = voices.find(voice => 
-          voice.lang.toLowerCase().startsWith('en')
-        );
-        
-        const anyFemaleVoice = voices.find(voice => 
-          voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman')
-        );
-        
-        const selectedVoice = femaleEnglishVoice || anyEnglishVoice || anyFemaleVoice || voices[0];
-        
-        if (selectedVoice) {
-          console.log('Selected voice:', selectedVoice.name, selectedVoice.lang);
-          utterance.voice = selectedVoice;
-          utterance.lang = selectedVoice.lang;
-        } else {
-          console.warn('No suitable voice found, using default system voice');
-        }
-      } catch (err) {
-        console.error('Error setting up voice:', err);
-        setError('Error setting up voice. Using system default.');
-      }
-
-      return utterance;
-    };
-
-    // Handle chunk completion
-    const handleChunkEnd = () => {
-      try {
-        positionRef.current++;
-        if (positionRef.current < chunksRef.current.length) {
-          playNextChunk();
-        } else {
-          setIsPlaying(false);
-          positionRef.current = 0;
-        }
-      } catch (err) {
-        console.error('Error in chunk completion:', err);
-        setError('Error during playback. Please try again.');
         setIsPlaying(false);
+        positionRef.current = 0;
+        updateProgress();
       }
-    };
-
-    // Set up utterance with event handlers
-    const setupUtterance = (text: string) => {
-      try {
-        const utterance = createUtterance(text);
-        utterance.onend = handleChunkEnd;
-        utterance.onerror = (event) => {
-          console.error('Speech synthesis error:', event);
-          setError('Error during speech synthesis. Please try again.');
-          setIsPlaying(false);
-        };
-        return utterance;
-      } catch (err) {
-        console.error('Error setting up utterance:', err);
-        setError('Error initializing speech. Please try again.');
-        setIsPlaying(false);
-        return null;
-      }
-    };
-
-    // Initialize with first chunk
-    if (chunksRef.current.length > 0) {
-      utteranceRef.current = setupUtterance(chunksRef.current[0]);
     }
-  };
-
-  const updateProgress = () => {
-    if (chunksRef.current.length === 0) {
-      setCurrentProgress(0);
-      return;
-    }
-    const progress = Math.round((positionRef.current / chunksRef.current.length) * 100);
-    setCurrentProgress(progress);
-  };
+  }, [speaking]);
 
   const playNextChunk = () => {
-    if (positionRef.current < chunksRef.current.length) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(chunksRef.current[positionRef.current]);
-        utteranceRef.current = utterance;
-
-        // Set up voice
-        const voices = speechSynthesis.getVoices();
-        const femaleEnglishVoice = voices.find(voice => 
-          (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman')) &&
-          voice.lang.toLowerCase().startsWith('en')
-        );
-        if (femaleEnglishVoice) {
-          utterance.voice = femaleEnglishVoice;
-          utterance.lang = femaleEnglishVoice.lang;
-        }
-
-        // Set properties
-        utterance.rate = rate;
-        utterance.pitch = pitch;
-        utterance.volume = volume;
-
-        // Handle chunk completion
-        utterance.onend = () => {
-          const nextPosition = positionRef.current + 1;
-          if (nextPosition < chunksRef.current.length) {
-            positionRef.current = nextPosition;
-            updateProgress();
-            playNextChunk();
-          } else {
-            setIsPlaying(false);
-            positionRef.current = 0;
-            updateProgress();
-            console.log('Finished playing all chunks');
-          }
-        };
-
-        // Handle errors
-        utterance.onerror = (event) => {
-          console.error('Error playing chunk:', event);
-          setError(`Error playing chunk ${positionRef.current + 1}. Please try again.`);
-          setIsPlaying(false);
-          updateProgress();
-        };
-
-        console.log(`Playing chunk ${positionRef.current + 1} of ${chunksRef.current.length}`);
-        speechSynthesis.speak(utterance);
-        updateProgress();
-      } catch (err) {
-        console.error('Error in playNextChunk:', err);
-        setError('Error playing audio. Please try again.');
-        setIsPlaying(false);
-        updateProgress();
-      }
-    } else {
-      console.log('No more chunks to play');
+    if (positionRef.current >= chunksRef.current.length) {
       setIsPlaying(false);
-      positionRef.current = 0;
-      updateProgress();
+      return;
+    }
+
+    const chunk = chunksRef.current[positionRef.current];
+    console.log("Playing chunk:", chunk);
+    
+    try {
+      // Cancel any ongoing speech
+      cancel();
+      
+      // Speak the chunk
+      speak({
+        text: chunk,
+        rate: rate,
+        voice: voices.find(voice => voice.lang.includes('en-GB')) || voices[0],
+        onEnd: () => {
+          console.log("Finished speaking chunk");
+        },
+        onError: (error: any) => {
+          console.error('Speech error:', error);
+          setError('Error playing audio. Please try again.');
+          setIsPlaying(false);
+        }
+      });
+    } catch (err) {
+      console.error("Error in playNextChunk:", err);
+      setError("Failed to play audio. Please try again.");
+      setIsPlaying(false);
     }
   };
 
   const handlePlayPause = () => {
+    console.log("Play/Pause clicked", { isPlaying, supported });
+    
+    if (!supported) {
+      console.error("Speech synthesis not supported");
+      setError("Speech synthesis is not supported in your browser. Please try a different browser.");
+      return;
+    }
+
     setError(null);
     
     if (isPlaying) {
-      speechSynthesis.cancel();
+      console.log("Stopping playback");
+      cancel();
       setIsPlaying(false);
     } else {
+      console.log("Starting playback");
       if (positionRef.current >= chunksRef.current.length) {
         positionRef.current = 0;
       }
@@ -326,11 +217,115 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
   };
 
   const handleReset = () => {
-    speechSynthesis.cancel();
+    cancel();
     setIsPlaying(false);
     positionRef.current = 0;
     setError(null);
     updateProgress();
+  };
+
+  // Update voice properties when they change
+  useEffect(() => {
+    if (isPlaying) {
+      cancel();
+      playNextChunk();
+    }
+  }, [rate]);
+
+  const splitIntoChunks = (text: string): string[] => {
+    // Split into sections based on numbered items and major headers
+    const sections = text.split(/(?=\d+\.|Deep Dive:|Practical Application:|Formal Definition:|Key Points:|Summary:|Note:|Important:|Warning:|Tip:|Example:|Exercise:|Practice:|Challenge:|Solution:|Answer:|Explanation:)/i);
+    
+    const chunks: string[] = [];
+    
+    sections.forEach(section => {
+      const trimmedSection = section.trim();
+      if (!trimmedSection) return;
+
+      // Split section into paragraphs
+      const paragraphs = trimmedSection.split(/\n\s*\n/);
+      let currentChunk = '';
+
+      paragraphs.forEach(paragraph => {
+        const trimmedParagraph = paragraph.trim();
+        if (!trimmedParagraph) return;
+
+        // Check if this is a bullet point or list item
+        const isListItem = trimmedParagraph.match(/^[\d*•-]/);
+        
+        // Check if this is a code block
+        const isCodeBlock = trimmedParagraph.includes('```');
+
+        if (isListItem || isCodeBlock) {
+          if (currentChunk) {
+            chunks.push(currentChunk.trim());
+            currentChunk = '';
+          }
+          chunks.push(trimmedParagraph);
+        } else {
+          // For regular paragraphs, combine them if they're related
+          if (currentChunk) {
+            // Check if the current paragraph is a continuation
+            const isContinuation = !trimmedParagraph.match(/^[A-Z]/) || // Doesn't start with capital letter
+                                 trimmedParagraph.startsWith('And ') ||
+                                 trimmedParagraph.startsWith('But ') ||
+                                 trimmedParagraph.startsWith('Or ') ||
+                                 trimmedParagraph.startsWith('So ') ||
+                                 trimmedParagraph.startsWith('Because ') ||
+                                 trimmedParagraph.startsWith('However ') ||
+                                 trimmedParagraph.startsWith('Therefore ') ||
+                                 trimmedParagraph.startsWith('Thus ') ||
+                                 trimmedParagraph.startsWith('Hence ') ||
+                                 trimmedParagraph.startsWith('Moreover ') ||
+                                 trimmedParagraph.startsWith('Furthermore ') ||
+                                 trimmedParagraph.startsWith('Additionally ');
+
+            if (isContinuation) {
+              currentChunk += ' ' + trimmedParagraph;
+            } else {
+              chunks.push(currentChunk.trim());
+              currentChunk = trimmedParagraph;
+            }
+          } else {
+            currentChunk = trimmedParagraph;
+          }
+        }
+      });
+
+      // Add the last chunk if it exists
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+      }
+    });
+
+    // Post-process chunks to ensure they're meaningful
+    const processedChunks = chunks
+      .map(chunk => chunk.trim())
+      .filter(chunk => chunk.length > 0)
+      .map(chunk => {
+        // Ensure proper spacing after common delimiters
+        return chunk
+          .replace(/([.!?])\s*([A-Z])/g, '$1 $2') // Add space between sentences if missing
+          .replace(/\s+/g, ' ') // Normalize spaces
+          .trim();
+      });
+
+    // Log chunks for debugging
+    processedChunks.forEach((chunk, index) => {
+      console.log(`\nChunk ${index + 1}:`);
+      console.log(chunk);
+    });
+
+    return processedChunks;
+  };
+
+  const updateProgress = () => {
+    if (chunksRef.current.length === 0) {
+      setCurrentProgress(0);
+      return;
+    }
+    const progress = Math.round((positionRef.current / chunksRef.current.length) * 100);
+    setCurrentProgress(progress);
   };
 
   return (
@@ -365,7 +360,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
                   setCurrentProgress(values[0]);
                   
                   if (isPlaying) {
-                    speechSynthesis.cancel();
+                    cancel();
                     playNextChunk();
                   }
                 } catch (err) {
@@ -382,7 +377,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
             </div>
           </div>
 
-          {/* Play/Pause and Volume Controls */}
+          {/* Play/Pause Controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -390,8 +385,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
                 size="lg"
                 className="w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-all"
                 onClick={handlePlayPause}
+                disabled={isLoading || !supported}
               >
-                {isPlaying ? (
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                ) : isPlaying ? (
                   <Pause className="h-6 w-6 text-white" />
                 ) : (
                   <Play className="h-6 w-6 text-white ml-1" />
@@ -402,27 +400,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
                 size="icon"
                 className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={handleReset}
+                disabled={isLoading || !supported}
               >
                 <RefreshCcw className="h-4 w-4" />
               </Button>
-            </div>
-
-            {/* Compact Volume Control */}
-            <div className="flex items-center gap-2 w-32">
-              <Volume2 className="h-4 w-4 text-gray-500" />
-              <Slider
-                value={[volume]}
-                min={0}
-                max={1}
-                step={0.1}
-                className="w-full"
-                onValueChange={(values: number[]) => {
-                  setVolume(values[0]);
-                  if (utteranceRef.current) {
-                    utteranceRef.current.volume = values[0];
-                  }
-                }}
-              />
             </div>
           </div>
         </div>
@@ -430,51 +411,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ content, moduleTitle }) => {
 
       {/* Settings Panel */}
       <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 space-y-4">
-        {/* Speed and Pitch Controls in a more compact layout */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <Settings className="h-3 w-3" />
-              <span>Speed ({rate}x)</span>
-            </div>
-            <Slider
-              value={[rate]}
-              min={0.5}
-              max={2}
-              step={0.1}
-              className="w-full"
-              onValueChange={(values: number[]) => {
-                setRate(values[0]);
-                if (utteranceRef.current) {
-                  utteranceRef.current.rate = values[0];
-                }
-              }}
-            />
+        {/* Speed Control */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+            <Settings className="h-3 w-3" />
+            <span>Speed ({rate}x)</span>
           </div>
-
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-              <Settings className="h-3 w-3" />
-              <span>Pitch ({pitch}x)</span>
-            </div>
-            <Slider
-              value={[pitch]}
-              min={0.5}
-              max={2}
-              step={0.1}
-              className="w-full"
-              onValueChange={(values: number[]) => {
-                setPitch(values[0]);
-                if (utteranceRef.current) {
-                  utteranceRef.current.pitch = values[0];
-                }
-              }}
-            />
-          </div>
+          <Slider
+            value={[rate]}
+            min={0.5}
+            max={2}
+            step={0.1}
+            className="w-full"
+            onValueChange={(values: number[]) => {
+              setRate(values[0]);
+            }}
+          />
         </div>
       </div>
 
-      {/* Content Display - Using MarkdownRenderer for proper formatting */}
+      {/* Content Display */}
       <div className="mt-6 space-y-4">
         <div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
