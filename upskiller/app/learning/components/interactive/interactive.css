@@ -1,0 +1,294 @@
+/* Common styles */
+.interactive-element {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.interactive-title {
+  margin-bottom: 16px;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+/* Code Playground styles */
+.code-playground {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editor-container {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.playground-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.run-button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.run-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.output-container {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+/* Drag and Drop styles */
+.drag-drop-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.items-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.draggable-item {
+  padding: 8px 16px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: move;
+  user-select: none;
+}
+
+.zones-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.zone-wrapper {
+  flex: 1;
+  min-width: 200px;
+}
+
+.drop-zone {
+  height: 150px;
+  padding: 16px;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zone-label {
+  color: #666;
+  text-align: center;
+}
+
+.placed-items {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.placed-item {
+  padding: 8px;
+  background-color: #e8f5e9;
+  border-radius: 4px;
+}
+
+/* Reveal Steps styles */
+.reveal-steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.steps-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.step-indicator {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.step-indicator.revealed {
+  background-color: #e3f2fd;
+}
+
+.step-indicator.active {
+  background-color: #2196F3;
+  color: white;
+}
+
+.step-content {
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.step-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.step-button {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.step-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Virtual Lab styles */
+.virtual-lab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lab-title {
+  margin-bottom: 16px;
+}
+
+.lab-progress {
+  display: flex;
+  gap: 8px;
+}
+
+.lab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-instruction {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.lab-workspace {
+  min-height: 200px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.lab-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.status-item {
+  padding: 4px 8px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.lab-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.nav-button {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Interactive Simulation styles */
+.simulation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.simulation-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.control-button {
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.simulation-canvas {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.interaction-panel {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.simulation-info {
+  padding: 16px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+} 

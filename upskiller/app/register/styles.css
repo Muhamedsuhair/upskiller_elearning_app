@@ -1,0 +1,8 @@
+/* styles.css */
+input[type="radio"]:checked {
+    accent-color: rgb(0, 0, 0);
+  }
+  
+  input[type="radio"]:checked + label {
+    color: rgb(0, 0, 0);
+  }

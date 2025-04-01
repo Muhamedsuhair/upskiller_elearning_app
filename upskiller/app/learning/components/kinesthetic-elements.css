@@ -1,0 +1,137 @@
+/* Kinesthetic Elements Styles */
+
+/* Code Playground */
+.kinesthetic-playground {
+  @apply bg-gray-900 rounded-lg p-4 my-4;
+}
+
+.kinesthetic-playground pre {
+  @apply bg-gray-800 p-4 rounded-md;
+}
+
+.kinesthetic-playground button {
+  @apply bg-blue-500 text-white px-4 py-2 rounded-md mt-2 hover:bg-blue-600 transition-colors;
+}
+
+/* Virtual Lab */
+.virtual-lab {
+  @apply border border-gray-200 dark:border-gray-700 rounded-lg p-4 my-4;
+}
+
+.virtual-lab-step {
+  @apply flex items-center gap-4 p-3 border-b border-gray-200 dark:border-gray-700 last:border-0;
+}
+
+.virtual-lab-step-number {
+  @apply w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold;
+}
+
+/* Interactive Simulation */
+.interactive-simulation {
+  @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-4 my-4;
+}
+
+.simulation-controls {
+  @apply flex gap-2 mt-4;
+}
+
+.simulation-controls button {
+  @apply bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors;
+}
+
+/* Drag and Drop Exercise */
+.drag-drop-exercise {
+  @apply grid grid-cols-2 gap-4 my-4;
+}
+
+.draggable-item {
+  @apply bg-white dark:bg-gray-700 p-3 rounded-md shadow cursor-move border-2 border-transparent;
+}
+
+.draggable-item.dragging {
+  @apply border-blue-500 opacity-50;
+}
+
+.drop-zone {
+  @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg min-h-[100px] border-2 border-dashed border-gray-300 dark:border-gray-600;
+}
+
+.drop-zone.active {
+  @apply border-blue-500;
+}
+
+/* Reveal Steps */
+.reveal-steps {
+  @apply space-y-4 my-4;
+}
+
+.reveal-step {
+  @apply bg-white dark:bg-gray-800 rounded-lg overflow-hidden transition-all duration-300;
+}
+
+.reveal-step-header {
+  @apply flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.reveal-step-content {
+  @apply p-4 border-t border-gray-200 dark:border-gray-700;
+}
+
+.reveal-step-icon {
+  @apply w-5 h-5 transform transition-transform;
+}
+
+.reveal-step.active .reveal-step-icon {
+  @apply rotate-180;
+}
+
+/* Common Interactive Elements */
+.interactive-button {
+  @apply bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors 
+         disabled:bg-gray-400 disabled:cursor-not-allowed;
+}
+
+.progress-indicator {
+  @apply h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+}
+
+.progress-bar {
+  @apply h-full bg-blue-500 transition-all duration-300;
+}
+
+.feedback-message {
+  @apply mt-2 text-sm;
+}
+
+.feedback-message.success {
+  @apply text-green-500;
+}
+
+.feedback-message.error {
+  @apply text-red-500;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .drag-drop-exercise {
+    @apply grid-cols-1;
+  }
+  
+  .simulation-controls {
+    @apply flex-wrap;
+  }
+} 

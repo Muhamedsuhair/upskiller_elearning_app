@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" stroke="#4F46E5" stroke-width="8" fill="none"/>
+  
+  <!-- Stylized U -->
+  <path d="M60 60 L60 140 L100 140 L100 60" stroke="#4F46E5" stroke-width="8" fill="none"/>
+  <path d="M100 60 L100 140 L140 140 L140 60" stroke="#4F46E5" stroke-width="8" fill="none"/>
+  
+  <!-- Up Arrow -->
+  <path d="M80 100 L100 80 L120 100" stroke="#4F46E5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="100" cy="100" r="30" stroke="#4F46E5" stroke-width="4" fill="none"/>
+  <path d="M100 70 L100 130 M70 100 L130 100" stroke="#4F46E5" stroke-width="4"/>
+</svg> 
