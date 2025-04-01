@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import UserProfile, CourseContent, ProgressRecord, DiagramPrompt
+from .models import UserProfile, CourseContent, ProgressRecord, DiagramPrompt, Certificate
 
 
 class ProgressRecordInline(admin.TabularInline):
@@ -37,3 +37,10 @@ class DiagramPromptAdmin(admin.ModelAdmin):
     list_filter = ('diagram_type',)
     search_fields = ('prompt_text', 'mermaid_code')
     raw_id_fields = ('course_content',)
+
+@admin.register(Certificate)
+class Certificate(admin.ModelAdmin):
+    list_display = ('user', 'title', 'course_title', 'completion_date', 'score', 'total_questions', 'created_at')
+    list_filter = ('completion_date', 'created_at', 'score')
+    search_fields = ('user__username', 'title', 'course_title')
+    readonly_fields = ('created_at', 'updated_at')

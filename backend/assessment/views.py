@@ -152,7 +152,7 @@ class AssessmentSubmissionView(APIView):
                     is_correct=selected_option.is_correct,
                     points_awarded=1 if selected_option.is_correct else 0
                 )
-                score += 1 if selected_option.is_correct else 0
+                score += 10 if selected_option.is_correct else 0
             
             attempt.score = score
             attempt.passed = score >= assessment.passing_score

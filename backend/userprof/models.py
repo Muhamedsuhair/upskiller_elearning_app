@@ -216,4 +216,21 @@ class DiagramPrompt(models.Model):
         choices=[('image', 'Image'), ('mermaid', 'Mermaid')],
         default='mermaid'
     )
-    created_at = models.DateTimeField(auto_now_add=True)    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Certificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
+    title = models.CharField(max_length=255)
+    course_title = models.CharField(max_length=255)
+    completion_date = models.DateTimeField()
+    score = models.IntegerField()
+    total_questions = models.IntegerField()
+    certificate_data = models.TextField()  # Store base64 encoded PNG data
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-completion_date']
+
+    def __str__(self):
+        return f"{self.user.username}'s Certificate for {self.course_title}"    

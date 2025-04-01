@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from .models import UserProfile, CourseContent, ProgressRecord, Course, Enrollment
+from .models import UserProfile, CourseContent, ProgressRecord, Course, Enrollment, Certificate
 import re
 from .serializers import (
     UserProfileSerializer, 
@@ -14,8 +14,8 @@ from .serializers import (
     ProgressRecordSerializer,
     ProgressUpdateSerializer,
     CourseSerializer,
-    EnrollmentSerializer
-    
+    EnrollmentSerializer,
+    CertificateSerializer
 )
 
 class RegisterView(APIView):
@@ -64,22 +64,37 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         
         if serializer.is_valid():
             content_id = serializer.validated_data['content_id']
-            status = serializer.validated_data['status']
+            progress_status = serializer.validated_data['status']
             completion_percentage = serializer.validated_data['completion_percentage']
             notes = serializer.validated_data.get('notes', '')
             
             content = get_object_or_404(CourseContent, id=content_id)
             
-            # Update progress (assuming profile has an update_progress method)
-            progress = profile.update_progress(
+            # Get or create progress record
+            progress, created = ProgressRecord.objects.get_or_create(
+                user_profile=profile,
                 content=content,
-                status=status,
-                completion_percentage=completion_percentage
+               
+                defaults={
+                    'status': 'not_started',
+                    'completion_percentage': 0
+                }
             )
+
+            # Update progress based on module completion
+            if completion_percentage >=0:
+                # If this is the last module, mark as completed
+                if completion_percentage == 100:
+                    progress.status = 'completed'
+                else:
+                    progress.status = 'in_progress'
             
-            if notes:  # Update notes if provided
+            progress.completion_percentage = completion_percentage
+            
+            if notes:
                 progress.notes = notes
-                progress.save()
+            
+            progress.save()
             
             return Response(
                 ProgressRecordSerializer(progress).data,
@@ -257,3 +272,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+class CertificateViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CertificateSerializer
+
+    def get_queryset(self):
+        return Certificate.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        certificate = self.get_object()
+        return Response({
+            'certificate_data': certificate.certificate_data
+        })

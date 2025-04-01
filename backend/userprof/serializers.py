@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import UserProfile, CourseContent, ProgressRecord, Course, Enrollment
+from .models import UserProfile, CourseContent, ProgressRecord, Course, Enrollment, Certificate
 from django.contrib.auth.models import User
 
 
@@ -89,9 +89,36 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class ProgressUpdateSerializer(serializers.Serializer):
     content_id = serializers.IntegerField()
-    status = serializers.ChoiceField(choices=ProgressRecord.STATUS_CHOICES)
-    completion_percentage = serializers.IntegerField(min_value=0, max_value=100)
+    status = serializers.ChoiceField(
+        choices=ProgressRecord.STATUS_CHOICES,
+        default='not_started'
+    )
+    completion_percentage = serializers.IntegerField(
+        min_value=0,
+        max_value=100,
+        default=0
+    )
     notes = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        """
+        Custom validation to ensure status and completion_percentage are consistent
+        """
+        status = data.get('status')
+        completion_percentage = data.get('completion_percentage', 0)
+
+        if status == 'completed' and completion_percentage < 100:
+            raise serializers.ValidationError({
+                'completion_percentage': 'Completion percentage must be 100 when status is completed'
+            })
+
+        if status == 'not_started' and completion_percentage > 0:
+            raise serializers.ValidationError({
+                'completion_percentage': 'Completion percentage must be 0 when status is not started'
+            })
+
+        return data
+
 class CourseSerializer(serializers.ModelSerializer):
     is_enrolled = serializers.SerializerMethodField()
     contents = serializers.HyperlinkedRelatedField(
@@ -124,4 +151,10 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enrollment
         fields = ['id', 'user', 'course', 'enrolled_at']
-        read_only_fields = ['user', 'enrolled_at']    
+        read_only_fields = ['user', 'enrolled_at']
+
+class CertificateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Certificate
+        fields = ['id', 'title', 'course_title', 'completion_date', 'score', 'total_questions', 'certificate_data', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']    
