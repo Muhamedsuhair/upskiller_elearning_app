@@ -12,6 +12,7 @@ import apiClient from "@/utils/apiClient"
 import AudioPlayer from './components/AudioPlayer'
 import InteractiveElement from './components/interactive/InteractiveElement'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import LearningPathView from './components/LearningPathView'
 
 interface CourseModule {
   id: number
@@ -511,7 +512,7 @@ export default function LearningPage() {
           </div>
 
           {/* Sidebar */}
-          <div>
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Course Modules</CardTitle>
@@ -561,54 +562,9 @@ export default function LearningPage() {
                 </Button>
               </CardFooter>
             </Card>
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Learning Preferences</CardTitle>
-                <CardDescription>Customize your experience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Preferred Learning Style</h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      <Button size="sm" variant="outline" className="justify-start">
-                        <PlayCircle className="h-4 w-4 mr-2" />
-                        Visual
-                      </Button>
-                      <Button size="sm" variant="outline" className="justify-start">
-                        <BarChart2 className="h-4 w-4 mr-2" />
-                        Diagram
-                      </Button>
-                      <Button size="sm" variant="outline" className="justify-start">
-                        <Headphones className="h-4 w-4 mr-2" />
-                        Auditory
-                      </Button>
-                      <Button size="sm" variant="default" className="justify-start">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Text
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Learning Schedule</h3>
-                    <p className="text-sm text-gray-500">
-                      You typically learn in the evenings between 7-9 PM. Next scheduled session: Today at 7:00 PM
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">Learning Goals</h3>
-                    <p className="text-sm text-gray-500">
-                      Current goal: {course.current_module} by Friday
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  Update Preferences
-                </Button>
-              </CardFooter>
-            </Card>
+
+            {/* Learning Path View */}
+            <LearningPathView />
           </div>
         </div>
       </div>

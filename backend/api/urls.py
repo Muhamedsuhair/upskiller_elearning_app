@@ -4,6 +4,5 @@ import assessment.urls
 
 urlpatterns = [
     path('generate-content/', GenerateContentView.as_view(), name='generate-content'),
-    path('',include(assessment.urls))
-
+    path('user/assessment/', include(assessment.urls))
 ]

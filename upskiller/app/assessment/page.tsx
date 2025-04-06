@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/dialog"
 import { ArrowLeft, Clock, HelpCircle, Trophy } from "lucide-react"
 import Certificate from "@/components/Certificate"
+import { learningPathApi } from '@/utils/learningPathApi'
+import { useRouter } from "next/navigation"
 
 interface AssessmentData {
   id: number
@@ -65,8 +67,10 @@ export default function AssessmentPage() {
   const [showCertificate, setShowCertificate] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null)
   const [userData, setUserData] = useState<UserData | null>(null)
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false)
   const topic = searchParams.get('topic') || ''
   const difficulty = searchParams.get('difficulty') || 'beginner'
+  const router = useRouter()
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -130,10 +134,15 @@ export default function AssessmentPage() {
       const result = res.data as SubmissionResponse
       setSubmissionResult(result)
       
+      // Call handleAssessmentComplete regardless of whether the assessment was passed
+      await handleAssessmentComplete(result.attempt_id)
+      
       if (result.passed) {
         setShowCertificate(true)
       } else {
         alert(`You scored ${result.score}/${assessment.questions.length}. The passing score is ${result.passing_score}. Please try again.`)
+        // Go back to the previous page instead of routing to learning page
+        router.back()
       }
     } catch (error) {
       console.error('Submission error:', error)
@@ -174,6 +183,30 @@ export default function AssessmentPage() {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`
+  }
+
+  const handleAssessmentComplete = async (attemptId: number) => {
+    try {
+      console.log(`Completing assessment with attempt ID: ${attemptId}`)
+      // Complete the assessment in the learning path
+      const response = await learningPathApi.completeAssessment(attemptId)
+      console.log('Response from completeAssessment:', response)
+      
+      if (response.learning_path) {
+        console.log('Learning path received:', response.learning_path)
+        // Show completion dialog
+        setShowCompletionDialog(true)
+        
+        // Redirect to learning path
+        
+      } else {
+        console.error('No learning path received from server')
+        alert('Failed to generate learning path. Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to complete assessment:', error)
+      alert('Failed to complete assessment. Please try again.')
+    }
   }
 
   if (!assessment) return <div className="p-4">Loading assessment...</div>

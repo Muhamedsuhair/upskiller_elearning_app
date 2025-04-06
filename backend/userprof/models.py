@@ -65,11 +65,22 @@ class UserProfile(models.Model):
         ('kinesthetic', 'Kinesthetic'),
     ]
     
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('expert', 'Expert'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     learning_style = models.CharField(
         max_length=20,
         choices=LEARNING_STYLE_CHOICES,
         default='visual'
+    )
+    difficulty_level = models.CharField(
+        max_length=20,
+        choices=DIFFICULTY_CHOICES,
+        default='beginner'
     )
     bio = models.TextField(blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)

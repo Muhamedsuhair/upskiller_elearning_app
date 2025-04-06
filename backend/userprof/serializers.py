@@ -44,6 +44,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'email',
             'password',
             'learning_style',
+            'difficulty_level',
             'bio',
             'date_joined',
             'last_active'
@@ -83,6 +84,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         # Update additional fields on the profile
         profile.learning_style = validated_data.get('learning_style', profile.learning_style)
+        profile.difficulty_level = validated_data.get('difficulty_level', profile.difficulty_level)
         profile.bio = validated_data.get('bio', profile.bio)
         profile.save()
         return profile

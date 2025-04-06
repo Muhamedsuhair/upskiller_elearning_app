@@ -35,4 +35,64 @@ class UserResponse(models.Model):
     is_correct = models.BooleanField(default=False)
     points_awarded = models.PositiveIntegerField(default=0)
 
+class Concept(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    difficulty_level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('expert', 'Expert')
+    ])
+    prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True)
+    
+    def __str__(self):
+        return self.name
+
+class QuestionConceptMapping(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    weight = models.FloatField(default=1.0)  # How strongly this question tests the concept
+    
+    class Meta:
+        unique_together = ('question', 'concept')
+
+class UserConceptProficiency(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    proficiency_score = models.FloatField(default=0.0)  # 0.0 to 1.0
+    last_assessed = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('user', 'concept')
+
+class LearningPath(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='learning_paths')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    course_content_id = models.IntegerField(null=True, blank=True)
+    course_content_title = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+
+class LearningPathNode(models.Model):
+    learning_path = models.ForeignKey(LearningPath, related_name='nodes', on_delete=models.CASCADE)
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()
+    content_type = models.CharField(max_length=20, choices=[
+        ('video', 'Video'),
+        ('text', 'Text'),
+        ('interactive', 'Interactive'),
+        ('assessment', 'Assessment')
+    ])
+    content_id = models.CharField(max_length=255)  # ID of the specific content
+    completed = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ('learning_path', 'order')
+
 

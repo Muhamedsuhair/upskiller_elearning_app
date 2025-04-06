@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
+import { Download,GraduationCap  } from "lucide-react"
 import html2canvas from "html2canvas"
 import { useEffect, useRef } from "react"
 
