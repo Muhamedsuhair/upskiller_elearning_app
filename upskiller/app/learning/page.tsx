@@ -337,8 +337,8 @@ export default function LearningPage() {
 
   const handleStartAssessment = () => {
     if (!course) return;
-    // Navigate to assessment page with course title and difficulty level
-    router.push(`/assessment?topic=${encodeURIComponent(course.title)}&difficulty=${encodeURIComponent(course.difficulty_level)}`);
+    // Navigate to assessment page with course title, difficulty level, and course ID
+    router.push(`/assessment?topic=${encodeURIComponent(course.title)}&difficulty=${encodeURIComponent(course.difficulty_level)}&courseId=${course.id}`);
   };
 
   return (
@@ -564,7 +564,7 @@ export default function LearningPage() {
             </Card>
 
             {/* Learning Path View */}
-            <LearningPathView />
+            <LearningPathView courseId={course.id} />
           </div>
         </div>
       </div>

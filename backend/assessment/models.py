@@ -9,6 +9,11 @@ class Assessment(models.Model):
     time_limit = models.PositiveIntegerField(default=30,help_text="Time in minutes")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    course_content_id = models.IntegerField(null=True, blank=True)
+    course_content_title = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
 
 class Question(models.Model):
     assessment = models.ForeignKey(Assessment, related_name='questions', on_delete=models.CASCADE)

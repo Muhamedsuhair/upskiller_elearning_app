@@ -1,71 +1,100 @@
 # assessment/serializers.py
 from rest_framework import serializers
 from .models import (
-    AssessmentAttempt, UserResponse, Assessment, Question, Option,
-    Concept, QuestionConceptMapping, UserConceptProficiency, LearningPath, LearningPathNode
+    Assessment, Question, Option, AssessmentAttempt,
+    UserResponse, Concept, QuestionConceptMapping,
+    LearningPath, LearningPathNode, UserConceptProficiency
 )
+
+class OptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = ['id', 'text', 'is_correct']
+
+class QuestionSerializer(serializers.ModelSerializer):
+    options = OptionSerializer(many=True, read_only=True)
+    concepts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = ['id', 'text', 'options', 'concepts']
+
+    def get_concepts(self, obj):
+        mappings = QuestionConceptMapping.objects.filter(question=obj)
+        return [{
+            'id': mapping.concept.id,
+            'name': mapping.concept.name,
+            'weight': mapping.weight
+        } for mapping in mappings]
+
+class AssessmentSerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Assessment
+        fields = ['id', 'title', 'description', 'questions']
 
 class UserResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserResponse
-        fields = ['question', 'selected_option', 'response_text', 'is_correct', 'points_awarded']
+        fields = ['id', 'question', 'selected_option', 'is_correct']
 
-class AssessmentSubmissionSerializer(serializers.Serializer):
-    assessment = serializers.PrimaryKeyRelatedField(queryset=Assessment.objects.all())
-    processed_answers = UserResponseSerializer(many=True)
+class AssessmentAttemptSerializer(serializers.ModelSerializer):
+    responses = UserResponseSerializer(many=True, read_only=True)
 
-class SubmissionSerializer(serializers.Serializer):
-    assessment_id = serializers.IntegerField(required=True)
-    answers = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.IntegerField(),
-            required=True
-        ),
-        required=True
-    )
-class AnswerSerializer(serializers.Serializer):
-    question_id = serializers.IntegerField(required=True)
-    selected_option_id = serializers.IntegerField(required=True)
+    class Meta:
+        model = AssessmentAttempt
+        fields = ['id', 'assessment', 'started_at', 'completed_at', 'responses']
 
-# Learning Path Serializers
 class ConceptSerializer(serializers.ModelSerializer):
+    prerequisites = serializers.SerializerMethodField()
+
     class Meta:
         model = Concept
-        fields = ['id', 'name', 'description', 'difficulty_level']
+        fields = ['id', 'name', 'description', 'difficulty_level', 'prerequisites']
 
-class QuestionConceptMappingSerializer(serializers.ModelSerializer):
-    concept = ConceptSerializer(read_only=True)
-    
-    class Meta:
-        model = QuestionConceptMapping
-        fields = ['id', 'question', 'concept', 'weight']
+    def get_prerequisites(self, obj):
+        return [{
+            'id': prereq.id,
+            'name': prereq.name
+        } for prereq in obj.prerequisites.all()]
 
 class UserConceptProficiencySerializer(serializers.ModelSerializer):
     concept = ConceptSerializer(read_only=True)
-    
+
     class Meta:
         model = UserConceptProficiency
-        fields = ['id', 'user', 'concept', 'proficiency_score', 'last_assessed']
+        fields = ['id', 'concept', 'proficiency_score']
 
 class LearningPathNodeSerializer(serializers.ModelSerializer):
     concept = ConceptSerializer(read_only=True)
-    
+    content = serializers.SerializerMethodField()
+
     class Meta:
         model = LearningPathNode
-        fields = ['id', 'learning_path', 'concept', 'order', 'content_type', 'content_id', 'completed']
+        fields = ['id', 'concept', 'order', 'content_type', 'content_id', 'completed', 'content']
+
+    def get_content(self, obj):
+        # This would typically fetch the actual content from your content storage
+        # For now, we'll return a placeholder
+        return {
+            'title': obj.concept.name,
+            'description': obj.concept.description,
+            'type': obj.content_type,
+            'id': obj.content_id
+        }
 
 class LearningPathSerializer(serializers.ModelSerializer):
     nodes = LearningPathNodeSerializer(many=True, read_only=True)
-    course_content = serializers.SerializerMethodField()
 
     class Meta:
         model = LearningPath
-        fields = ['id', 'user', 'title', 'description', 'created_at', 'updated_at', 'is_active', 'nodes', 'course_content']
+        fields = ['id', 'title', 'description', 'nodes']
 
-    def get_course_content(self, obj):
-        if obj.course_content_id and obj.course_content_title:
-            return {
-                'id': obj.course_content_id,
-                'title': obj.course_content_title
-            }
-        return None
+class SubmissionSerializer(serializers.Serializer):
+    assessment_id = serializers.IntegerField()
+    answers = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.IntegerField()
+        )
+    )

@@ -128,7 +128,9 @@ export default function AssessmentPage() {
         answers: Object.entries(answers).map(([qId, oId]) => ({
           question_id: parseInt(qId),
           selected_option_id: oId
-        }))
+        })),
+        course_content_id: searchParams.get('courseId'),
+        course_content_title: topic
       })
       
       const result = res.data as SubmissionResponse

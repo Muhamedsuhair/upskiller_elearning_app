@@ -50,7 +50,6 @@ class CourseContent(models.Model):
 
     class Meta:
         ordering = ['difficulty_level', 'title']
-        unique_together = ['title', 'difficulty_level']
 
 class Enrollment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

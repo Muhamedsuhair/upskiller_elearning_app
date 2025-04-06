@@ -70,7 +70,7 @@ class UserResponseAdmin(admin.ModelAdmin):
 @admin.register(Concept)
 class ConceptAdmin(admin.ModelAdmin):
     """Admin configuration for the Concept model."""
-    list_display = ('name', 'difficulty_level')
+    list_display = ('name', 'difficulty_level','description')
     list_filter = ('difficulty_level',)
     search_fields = ('name', 'description')
     filter_horizontal = ('prerequisites',)
@@ -93,7 +93,7 @@ class UserConceptProficiencyAdmin(admin.ModelAdmin):
 @admin.register(LearningPath)
 class LearningPathAdmin(admin.ModelAdmin):
     """Admin configuration for the LearningPath model."""
-    list_display = ('title', 'user', 'created_at', 'updated_at', 'is_active')
+    list_display = ('title', 'user', 'created_at', 'updated_at', 'is_active','course_content_id')
     list_filter = ('is_active', 'user')
     search_fields = ('title', 'description', 'user__username')
     readonly_fields = ('created_at', 'updated_at')

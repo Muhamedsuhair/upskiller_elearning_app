@@ -21,8 +21,8 @@ export interface LearningPath {
 }
 
 export const learningPathApi = {
-  getCurrentPath: async (): Promise<LearningPath> => {
-    const response = await apiClient.get('/user/assessment/learning-path/')
+  getCurrentPath: async (courseId: number): Promise<LearningPath> => {
+    const response = await apiClient.get(`/user/assessment/learning-path/${courseId}/`)
     return response.data as LearningPath
   },
 

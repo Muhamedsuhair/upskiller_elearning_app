@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, PlayCircle, FileText, BarChart2 } from "lucide-react"
 import { learningPathApi, LearningPath, LearningPathNode } from '@/utils/learningPathApi'
 import { useRouter } from 'next/navigation'
+import LearningInterface from './LearningInterface'
 
 const ContentTypeIcon = ({ type }: { type: LearningPathNode['content_type'] }) => {
   switch (type) {
@@ -19,19 +20,21 @@ const ContentTypeIcon = ({ type }: { type: LearningPathNode['content_type'] }) =
   }
 }
 
-export default function LearningPathView() {
+export default function LearningPathView({ courseId }: { courseId: number }) {
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedNode, setSelectedNode] = useState<LearningPathNode | null>(null)
+  const [showLearningInterface, setShowLearningInterface] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     loadLearningPath()
-  }, [])
+  }, [courseId])
 
   const loadLearningPath = async () => {
     try {
-      const path = await learningPathApi.getCurrentPath()
+      const path = await learningPathApi.getCurrentPath(courseId)
       setLearningPath(path)
     } catch (err) {
       setError('Failed to load learning path')
@@ -45,27 +48,16 @@ export default function LearningPathView() {
     try {
       await learningPathApi.completeLearningNode(nodeId)
       await loadLearningPath() // Reload to get updated state
+      setShowLearningInterface(false)
+      setSelectedNode(null)
     } catch (err) {
       console.error('Failed to complete node:', err)
     }
   }
 
   const handleNodeClick = (node: LearningPathNode) => {
-    // Navigate to the appropriate content based on type
-    switch (node.content_type) {
-      case 'video':
-        router.push(`/learning/video/${node.content_id}`)
-        break
-      case 'text':
-        router.push(`/learning/text/${node.content_id}`)
-        break
-      case 'interactive':
-        router.push(`/learning/interactive/${node.content_id}`)
-        break
-      case 'assessment':
-        router.push(`/assessment/${node.content_id}`)
-        break
-    }
+    setSelectedNode(node)
+    setShowLearningInterface(true)
   }
 
   if (loading) return <div>Loading learning path...</div>
@@ -76,52 +68,71 @@ export default function LearningPathView() {
   const progress = (completedNodes / learningPath.nodes.length) * 100
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{learningPath.title}</CardTitle>
-        <CardDescription>{learningPath.description}</CardDescription>
-        <div className="flex items-center gap-2 mt-2">
-          <Progress value={progress} className="h-2" />
-          <span className="text-sm text-gray-500">
-            {completedNodes} of {learningPath.nodes.length} completed
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {learningPath.nodes.map((node) => (
-            <div
-              key={node.id}
-              className={`flex items-center gap-4 p-4 rounded-lg border ${
-                node.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
-              }`}
-            >
-              <div className="flex-shrink-0">
-                {node.completed ? (
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                ) : (
-                  <ContentTypeIcon type={node.content_type} />
-                )}
-              </div>
-              <div className="flex-grow">
-                <h3 className="font-medium">{node.concept.name}</h3>
-                <p className="text-sm text-gray-500">{node.concept.description}</p>
-              </div>
-              <div className="flex-shrink-0">
-                {!node.completed && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleNodeClick(node)}
-                  >
-                    Start
-                  </Button>
-                )}
-              </div>
+    <>
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">{learningPath.title}</CardTitle>
+          <CardDescription className="text-xs">{learningPath.description}</CardDescription>
+          <div className="flex items-center gap-2 mt-1">
+            <Progress value={progress} className="h-1.5" />
+            <span className="text-xs text-gray-500">
+              {completedNodes}/{learningPath.nodes.length}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[300px] overflow-y-auto pr-2">
+            <div className="space-y-2">
+              {learningPath.nodes.map((node) => (
+                <div
+                  key={node.id}
+                  className={`flex items-center gap-2 p-2 rounded-lg border ${
+                    node.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <div className="flex-shrink-0">
+                    {node.completed ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <ContentTypeIcon type={node.content_type} />
+                    )}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <h3 className="font-medium text-sm truncate">{node.concept.name}</h3>
+                    <p className="text-xs text-gray-500 truncate">{node.concept.description}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {!node.completed && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => handleNodeClick(node)}
+                      >
+                        Start
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedNode && (
+        <LearningInterface
+          nodeId={selectedNode.id}
+          conceptName={selectedNode.concept.name}
+          conceptDescription={selectedNode.concept.description}
+          onComplete={() => handleNodeComplete(selectedNode.id)}
+          isOpen={showLearningInterface}
+          onClose={() => {
+            setShowLearningInterface(false)
+            setSelectedNode(null)
+          }}
+        />
+      )}
+    </>
   )
 } 
